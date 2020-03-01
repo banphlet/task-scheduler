@@ -1,11 +1,8 @@
 'use strict'
 import { required } from '../lib/utils'
+import { IJobDataSet } from '../job/interfaces'
 
 export declare interface FindParameters {
-  /**
-   * model or collection name
-   */
-  model: string
   /**
    * query object. By default uses a mongodb query format
    */
@@ -14,14 +11,21 @@ export declare interface FindParameters {
    * Sort criteria. By default uses a mongodb sort format
    */
   sort?: object
-  limit: number
+  limit?: number
+}
+
+export declare interface IUpsertParameters {
+  /**
+   * job data to insert into db
+   */
+  data: any
+  /**
+   * query object. By default uses a mongodb query format
+   */
+  query: object
 }
 
 export declare interface CreateParameters {
-  /**
-   * model or collection name
-   */
-  model: string
   /**
    * job data to insert into db
    */
@@ -32,10 +36,6 @@ export declare interface UpdateParameters {
    * query object
    */
   query: object
-  /**
-   * model or collection name
-   */
-  model: string
   /**
    * Update object
    */
@@ -50,27 +50,28 @@ export declare interface IStorageEngine {
   /**
    * insert new job
    */
-  insert: ({ model, data }: CreateParameters) => {}
+  insert: ({ data }: CreateParameters) => Promise<any>
+  upsert: ({ query, data }: IUpsertParameters) => Promise<any>
   /**
    * Find all jobs that meet a criteria
    */
-  find: ({ model, query, sort, limit }: FindParameters) => Promise<Array<any>>
+  find: ({ query, sort, limit }: FindParameters) => Promise<Array<IJobDataSet>>
   /**
    * Get a single job
    */
-  findOne: ({ model, query }: { model: string; query: object }) => any
+  findOne: ({ query }: { query: object }) => Promise<any>
   /**
    * Update single or multiple jobs
    */
-  update: ({ query, updateObj, model }: UpdateParameters) => any
+  update: ({ query, updateObj }: UpdateParameters) => Promise<any>
   /**
    * Delete single job
    */
-  removeOne: ({ model, query }: { model: string; query: object }) => any
+  removeOne: ({ query }: { query: object }) => Promise<any>
   /**
    * Removes all jobs
    */
-  clear: ({ model, query }: { model: string; query: object }) => any
+  clear: ({ query }: { query: object }) => Promise<any>
 }
 
 /**
@@ -78,13 +79,23 @@ export declare interface IStorageEngine {
  * Base storage engine
  *
  */
-function storageEngine (db = required('db')): IStorageEngine {
+function storageEngine (
+  db = required('db'),
+  model: string = required('model')
+): IStorageEngine {
   return {
-    insert: function ({ data = required('data'), model = required('model') }) {
+    insert: function ({ data = required('data') }) {
       return db.create({ model, data })
     },
+    upsert: async function ({
+      query = required('query'),
+      data = required('data')
+    }) {
+      const item = await this.findOne({ query })
+      if (item) return item
+      return this.insert({ data })
+    },
     find: function ({
-      model = required('model'),
       query = required('query'),
       sort = {},
       limit
@@ -92,22 +103,18 @@ function storageEngine (db = required('db')): IStorageEngine {
       return db.find({ model, query, sort, limit })
     },
     findOne: function (query = required('query')): any {
-      return db.findOne(query)
+      return db.findOne({ query, model })
     },
     update: function ({
       query = required('query'),
-      model = required('model'),
       updateObj = required('updateObj')
     }) {
       return db.update({ model, query, update: updateObj })
     },
-    removeOne: function ({
-      query = required('query'),
-      model = required('model')
-    }) {
+    removeOne: function ({ query = required('query') }) {
       return db.removeOne({ model, query })
     },
-    clear: function ({ model = required('model'), query = required('query') }) {
+    clear: function ({ query = required('query') }) {
       return db.removeMany({ model, query })
     }
   }

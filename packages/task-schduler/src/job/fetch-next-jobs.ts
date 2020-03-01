@@ -1,30 +1,26 @@
 'use strict'
 import { IStorageEngine } from '../storage-engine'
-import { computeNextRunDate } from '../lib/utils'
+import { formFindNextJobsQuery } from './queries'
 
-const formQuery = (interval: number) => {
-  return {
-    nextRunDate: { $lt: computeNextRunDate(interval), $gt: new Date() },
-    isRunning: false
-  }
-}
-
+/**
+ *
+ * Fetch next set of jobs to run
+ *
+ */
 function fetchNextJobs ({
   storage,
-  model,
-  interval,
-  concurrency
+  interval
 }: {
   storage: IStorageEngine
-  model: string
-  interval: number
-  concurrency: number
+  /**
+   *  The general interval of all tasks.
+   * Find jobs that have nextRunDate within the execution of the next interval
+   */
+  interval: string
 }) {
   return storage.find({
-    query: formQuery(interval),
-    model,
-    limit: concurrency
+    query: formFindNextJobsQuery(interval)
   })
 }
 
-module.exports = fetchNextJobs
+export default fetchNextJobs

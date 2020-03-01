@@ -1,54 +1,40 @@
 'use strict'
 
-import { required } from "../lib/utils"
-
-const TOTAL_DEFAULT_CONCURRENCY = 20
-
-export declare interface AddOptions{
-    /**
-     * Total number of jobs to be running at any point in time
-     */
-    totalConcurrency?: number,
-    /**
-     * Schedule period to run the job. 
-     * @example
-     *  Every friday. Every day at 5pm. Every tuesday
-     * 
-     */
-    schedulePeriod: number | string,
-    /**
-     * Any custom data you want to be passed to the job handler
-     */
-    customData?: any
-}
-export declare interface AddDefinitions extends AddOptions{
-    handler: ()=> any,
-}
-
-type AddParameters <D extends string>  = {
-[key in D]: AddDefinitions
-}
-
-let parameters: AddParameters<string> = {}
-
+import { required, computeNextRunDate } from '../lib/utils'
+import { IStorageEngine } from '../storage-engine'
+import { IAddOptions, IAddResponse } from './interfaces'
+import { formResolveByNameQuery } from './queries'
 
 /**
  * Add a new job
+ * @example
+ * const job = new Job()
+ * await job.add()
  * @param name Name of the job
  * @param handler Function to process the job
  * @param options  Additional options
  */
-function add(name: string =required("name"), handler= required("handler"), options:AddOptions =required("options")): AddParameters<string>{
-    parameters[name]= {
-        handler,
-        totalConcurrency: options.totalConcurrency || TOTAL_DEFAULT_CONCURRENCY,
-        schedulePeriod: options.schedulePeriod,
-        customData: options.customData 
-    }
-    return parameters
+async function add (
+  storage: IStorageEngine,
+  name: string = required('name'),
+  handler = required('handler'),
+  options: IAddOptions = required('options')
+): Promise<IAddResponse> {
+  const newItemToAdd = {
+    name,
+    nextRunDate: computeNextRunDate(options.scheduleInterval),
+    ...options
+  }
+  await storage.upsert({
+    query: formResolveByNameQuery(name),
+    data: newItemToAdd
+  })
+  return {
+    handler,
+    name,
+    scheduleInterval: options.scheduleInterval,
+    customData: options.customData
+  }
 }
-
-
-
 
 export default add
