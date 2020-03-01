@@ -20,4 +20,11 @@ const formFindNextJobsQuery = (interval: string) => {
   }
 }
 
-export { formResolveByNameQuery, formFindNextJobsQuery }
+const formLockJobQuery = (name: string, interval: string) => {
+  return {
+    query: { name: { $eq: name } },
+    updateObj: { isRunning: true, nextRunDate: computeNextRunDate(interval) }
+  }
+}
+
+export { formResolveByNameQuery, formFindNextJobsQuery, formLockJobQuery }

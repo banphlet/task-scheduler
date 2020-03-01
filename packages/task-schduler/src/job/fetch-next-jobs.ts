@@ -9,7 +9,8 @@ import { formFindNextJobsQuery } from './queries'
  */
 function fetchNextJobs ({
   storage,
-  interval
+  interval,
+  limit
 }: {
   storage: IStorageEngine
   /**
@@ -17,9 +18,14 @@ function fetchNextJobs ({
    * Find jobs that have nextRunDate within the execution of the next interval
    */
   interval: string
+  /**
+   * Total jobs to fetch
+   */
+  limit: number
 }) {
   return storage.find({
-    query: formFindNextJobsQuery(interval)
+    query: formFindNextJobsQuery(interval),
+    limit
   })
 }
 

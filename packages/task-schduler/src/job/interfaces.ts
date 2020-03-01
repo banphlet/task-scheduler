@@ -7,6 +7,8 @@ export declare interface IJobDataSet {
   lastRun: Date
   isRunning: boolean
   disabled: boolean
+  scheduleInterval: string
+  name: string
 }
 
 export declare interface IJobParameters {
@@ -39,8 +41,8 @@ export declare interface IAddOptions {
 }
 
 export declare interface IAddResponse extends IAddOptions {
-  handler?: () => any
-  name?: string
+  handler: (args: any) => Promise<any>
+  name: string
 }
 
 export type IJobQueue<D extends string> = { [key in D]?: IAddResponse }
@@ -51,5 +53,13 @@ export declare class IJob {
   queue: IJobQueue<string>
   storage: IStorageEngine
 
-  add (name: string, handler: string, options: IAddOptions): Promise<IJob>
+  /**
+   *
+   * Add a new job
+   */
+  add (
+    name: string,
+    handler: string,
+    options: IAddOptions
+  ): Promise<IAddResponse>
 }

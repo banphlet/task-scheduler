@@ -23,6 +23,8 @@ async function add (
   const newItemToAdd = {
     name,
     nextRunDate: computeNextRunDate(options.scheduleInterval),
+    disabled: false,
+    isRunning: false,
     ...options
   }
   await storage.upsert({

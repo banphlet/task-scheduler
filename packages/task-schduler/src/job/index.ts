@@ -4,10 +4,10 @@ import add from './add'
 import { required } from '../lib/utils'
 import { IJobParameters } from './interfaces'
 import { IStorageEngine } from '../storage-engine'
-import { IAddOptions, IJobQueue } from './interfaces'
+import { IAddOptions, IJobQueue, IJob } from './interfaces'
 import { formResolveByNameQuery } from './queries'
 
-export default class Job extends EventEmitter {
+export default class Job extends EventEmitter implements IJob {
   interval: string
   concurrency: number
   queue: IJobQueue<string> = {}
@@ -26,7 +26,7 @@ export default class Job extends EventEmitter {
   ) {
     const job = await add(this.storage, name, handler, options)
     this.queue[name] = job
-    return this
+    return job
   }
 
   /**
